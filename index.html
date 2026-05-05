@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AvA Universe — Deep Space Signal Analysis Network</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0b;
+    --bg2: #111113;
+    --bg3: #18181b;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0eeea;
+    --text2: #8a8880;
+    --text3: #4a4845;
+    --green: #1fba85;
+    --green-dim: #0e5c40;
+    --amber: #d4860f;
+    --amber-dim: #5c3a06;
+    --blue: #3b82f6;
+    --blue-dim: #1e3a5f;
+    --font-mono: 'DM Mono', monospace;
+    --font-display: 'Syne', sans-serif;
+    --radius: 8px;
+    --radius-lg: 14px;
+  }
+
+  body {
+    font-family: var(--font-mono);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  /* HEADER */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 1.25rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: rgba(10,10,11,0.92);
+    backdrop-filter: blur(12px);
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+
+  .logo span { color: var(--text2); font-weight: 400; }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 11px;
+    color: var(--text2);
+    letter-spacing: 0.06em;
+  }
+
+  .status-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    margin-right: 6px;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+  /* TABS */
+  nav {
+    padding: 0 2rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+  }
+
+  .tab-btn {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    padding: 14px 20px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    text-transform: uppercase;
+  }
+
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--text); border-bottom-color: var(--green); }
+
+  /* MAIN */
+  main { max-width: 900px; margin: 0 auto; padding: 2rem; }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* CARDS */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  .card-title {
+    font-size: 11px;
+    color: var(--text2);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* STATS */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin-bottom: 1.5rem;
+  }
+
+  .stat {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.1rem;
+  }
+
+  .stat-label { font-size: 10px; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 5px; }
+  .stat-value { font-family: var(--font-display); font-size: 24px; font-weight: 700; }
+  .stat-value.green { color: var(--green); }
+  .stat-value.amber { color: var(--amber); }
+  .stat-value.blue { color: var(--blue); }
+
+  /* WAVEFORM */
+  .waveform {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 90px;
+    margin-bottom: 0.5rem;
+  }
+
+  .bar {
+    flex: 1;
+    border-radius: 2px 2px 0 0;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    transition: height 0.35s ease, background 0.35s ease, border-color 0.35s ease;
+    min-width: 0;
+  }
+
+  .bar.active { background: rgba(31,186,133,0.3); border-color: var(--green); }
+  .bar.anomaly { background: rgba(212,134,15,0.3); border-color: var(--amber); }
+  .bar.strong { background: rgba(59,130,246,0.3); border-color: var(--blue); }
+
+  .freq-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 0.04em;
+    margin-bottom: 1.25rem;
+  }
+
+  /* BUTTONS */
+  .btn {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    padding: 8px 18px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn:hover { background: var(--bg3); border-color: var(--border2); }
+  .btn.primary { background: var(--green); color: #000; border-color: var(--green); font-weight: 500; }
+  .btn.primary:hover { opacity: 0.88; }
+  .btn.sm { padding: 5px 12px; font-size: 10px; }
+
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+
+  /* LOG */
+  .log-list { max-height: 200px; overflow-y: auto; }
+  .log-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    animation: fadeUp 0.3s ease;
+  }
+
+  .log-item:last-child { border-bottom: none; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }
+
+  .log-time { color: var(--text3); min-width: 48px; }
+  .log-freq { color: var(--text2); min-width: 80px; }
+  .log-msg { flex: 1; color: var(--text); }
+
+  .badge {
+    font-size: 9px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  .b-normal { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
+  .b-anomaly { background: var(--amber-dim); color: var(--amber); border: 1px solid var(--amber-dim); }
+  .b-strong { background: var(--blue-dim); color: var(--blue); border: 1px solid var(--blue-dim); }
+  .b-green { background: var(--green-dim); color: var(--green); border: 1px solid var(--green-dim); }
+
+  /* DATA TABLE */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .data-table th { text-align: left; font-size: 10px; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; padding: 6px 0; border-bottom: 1px solid var(--border); font-weight: 400; }
+  .data-table td { padding: 9px 0; border-bottom: 1px solid var(--border); color: var(--text); }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table .muted { color: var(--text2); }
+  .data-table .val { font-family: var(--font-display); font-weight: 600; }
+
+  /* VAULT */
+  .vault-list { max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+  .vault-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 10px 12px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 11px;
+    animation: fadeUp 0.3s ease;
+  }
+
+  .vault-freq { font-family: var(--font-display); font-weight: 600; font-size: 13px; margin-bottom: 2px; }
+  .vault-meta { color: var(--text2); font-size: 10px; }
+
+  /* REPLY */
+  .alien-msg {
+    background: var(--bg3);
+    border: 1px solid var(--green-dim);
+    border-left: 3px solid var(--green);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+    font-size: 12px;
+    line-height: 1.8;
+  }
+
+  .decoded { color: var(--green); font-size: 11px; margin-top: 6px; }
+
+  textarea {
+    width: 100%;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 0.85rem 1rem;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    color: var(--text);
+    resize: vertical;
+    min-height: 80px;
+    outline: none;
+    transition: border-color 0.15s;
+    margin-bottom: 10px;
+  }
+
+  textarea:focus { border-color: var(--green); }
+
+  select {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 8px 12px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  .encoded-output {
+    font-size: 11px;
+    line-height: 1.9;
+    word-break: break-all;
+    color: var(--green);
+    padding: 1rem;
+    background: var(--bg3);
+    border-radius: var(--radius);
+    border: 1px solid var(--green-dim);
+    margin-top: 10px;
+    display: none;
+  }
+
+  .tx-confirm {
+    font-size: 11px;
+    color: var(--green);
+    margin-top: 8px;
+    display: none;
+    animation: fadeUp 0.3s ease;
+  }
+
+  .tx-log-item {
+    font-size: 11px;
+    color: var(--text2);
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* MOON */
+  .moon-hero {
+    text-align: center;
+    padding: 1.5rem 0 1rem;
+  }
+
+  .moon-icon { font-size: 80px; line-height: 1; margin-bottom: 0.75rem; }
+  .moon-phase-name { font-family: var(--font-display); font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+  .moon-illum { font-size: 12px; color: var(--text2); margin-bottom: 1.25rem; }
+
+  .phase-track {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+
+  .phase-pip {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    cursor: default;
+  }
+
+  .phase-pip.now { border: 2px solid var(--green); }
+
+  .moon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin-bottom: 1.25rem;
+  }
+
+  .moon-stat {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.85rem 1rem;
+  }
+
+  .moon-stat-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+  .moon-stat-val { font-family: var(--font-display); font-size: 16px; font-weight: 600; }
+
+  .fact-box {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.1rem 1.25rem;
+    font-size: 13px;
+    line-height: 1.75;
+    color: var(--text);
+    margin-bottom: 10px;
+    min-height: 72px;
+    transition: opacity 0.2s;
+  }
+
+  .fact-counter { font-size: 10px; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+
+  /* ASTRONOMER */
+  .astro-profile {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    margin-bottom: 1.25rem;
+  }
+
+  .avatar {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+
+  .astro-bio { font-size: 12px; color: var(--text2); line-height: 1.75; }
+  .astro-name { font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+
+  .quote-block {
+    background: var(--bg3);
+    border-left: 3px solid var(--green);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--text);
+    min-height: 80px;
+  }
+
+  .quote-attr { font-size: 10px; color: var(--text3); margin-top: 8px; letter-spacing: 0.04em; }
+
+  .reaction-box {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    font-size: 13px;
+    line-height: 1.75;
+    color: var(--text2);
+    margin-bottom: 1rem;
+    min-height: 60px;
+  }
+
+  /* AI CHAT */
+  .chat-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .chat-messages {
+    max-height: 340px;
+    overflow-y: auto;
+    padding: 1rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .chat-msg {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    animation: fadeUp 0.3s ease;
+  }
+
+  .chat-msg.user { flex-direction: row-reverse; }
+
+  .chat-avatar {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .chat-bubble {
+    max-width: 80%;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius);
+    font-size: 12px;
+    line-height: 1.75;
+  }
+
+  .chat-msg.elara .chat-bubble {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .chat-msg.user .chat-bubble {
+    background: var(--green-dim);
+    border: 1px solid var(--green-dim);
+    color: var(--text);
+  }
+
+  .chat-input-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .chat-input {
+    flex: 1;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 0.65rem 0.9rem;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    color: var(--text);
+    outline: none;
+    resize: none;
+    min-height: 42px;
+    max-height: 120px;
+    transition: border-color 0.15s;
+    line-height: 1.5;
+  }
+
+  .chat-input:focus { border-color: var(--green); }
+
+  .typing-indicator {
+    display: none;
+    gap: 4px;
+    align-items: center;
+    padding: 6px 10px;
+    font-size: 11px;
+    color: var(--text3);
+  }
+
+  .typing-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--text3);
+    animation: typingBounce 1.2s infinite;
+  }
+
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes typingBounce {
+    0%,60%,100% { transform: translateY(0); }
+    30% { transform: translateY(-5px); }
+  }
+
+  /* COSMOS QUOTE */
+  .cosmos-quote {
+    font-family: var(--font-display);
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--text);
+    margin-bottom: 8px;
+    font-style: italic;
+  }
+
+  /* EMPTY STATE */
+  .empty {
+    text-align: center;
+    color: var(--text3);
+    font-size: 12px;
+    padding: 2rem 0;
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+  /* API KEY NOTICE */
+  .api-notice {
+    background: var(--amber-dim);
+    border: 1px solid var(--amber);
+    border-radius: var(--radius);
+    padding: 0.85rem 1rem;
+    font-size: 11px;
+    color: var(--amber);
+    line-height: 1.7;
+    margin-bottom: 1rem;
+    display: none;
+  }
+
+  input[type="text"] {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 8px 12px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    color: var(--text);
+    outline: none;
+    width: 100%;
+    transition: border-color 0.15s;
+  }
+
+  input[type="text"]:focus { border-color: var(--green); }
+
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 1.5rem 2rem;
+    text-align: center;
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 0.06em;
+    margin-top: 2rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">AvA <span>Universe</span></div>
+  <div class="header-right">
+    <span><span class="status-dot"></span>network active</span>
+    <span id="headerStats">0 signals analyzed</span>
+  </div>
+</header>
+
+<nav>
+  <button class="tab-btn active" onclick="showTab('scanner',this)">scanner</button>
+  <button class="tab-btn" onclick="showTab('vault',this)">data vault</button>
+  <button class="tab-btn" onclick="showTab('reply',this)">alien reply</button>
+  <button class="tab-btn" onclick="showTab('moon',this)">moon</button>
+  <button class="tab-btn" onclick="showTab('astronomer',this)">dr. elara voss</button>
+</nav>
+
+<main>
+
+  <!-- SCANNER -->
+  <div id="scanner" class="section active">
+    <div class="stats-grid">
+      <div class="stat"><div class="stat-label">signals analyzed</div><div class="stat-value" id="totalAnalyzed">0</div></div>
+      <div class="stat"><div class="stat-label">anomalies</div><div class="stat-value amber" id="anomalyCount">0</div></div>
+      <div class="stat"><div class="stat-label">strong signals</div><div class="stat-value green" id="strongCount">0</div></div>
+      <div class="stat"><div class="stat-label">session time</div><div class="stat-value" id="sessionTime">0:00</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">live frequency scanner — 1420 mhz hydrogen line</span>
+        <span id="scanStatus" style="font-size:10px;color:var(--text3);">idle</span>
+      </div>
+      <div class="waveform" id="waveform"></div>
+      <div class="freq-labels">
+        <span>1418.0</span><span>1418.5</span><span>1419.0</span><span>1419.5</span><span>1420.0</span><span>1420.5</span><span>1421.0</span><span>1421.5</span><span>1422.0</span>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn primary" id="mainBtn" onclick="toggleScan()">start scanning</button>
+      <button class="btn" onclick="resetAll()">reset session</button>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">signal log</span>
+        <span id="logCount" style="font-size:10px;color:var(--text3);">0 entries</span>
+      </div>
+      <div class="log-list" id="logList">
+        <div class="empty">press start scanning to begin analysis</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VAULT -->
+  <div id="vault" class="section">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">collected signal vault</span>
+        <span id="vaultCount" style="font-size:10px;color:var(--text3);">0 saved</span>
+      </div>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:1rem;line-height:1.75;">anomalies and strong signals are auto-saved here. this is your mission data.</p>
+      <div class="vault-list" id="vaultList">
+        <div class="empty">no signals collected yet — start scanning to gather data</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">signal breakdown</span></div>
+      <table class="data-table">
+        <thead><tr><th>type</th><th>count</th><th>% of total</th><th>significance</th></tr></thead>
+        <tbody>
+          <tr><td class="muted">normal</td><td class="val" id="b-normal">0</td><td id="p-normal">—</td><td class="muted">background noise</td></tr>
+          <tr><td class="muted">anomaly</td><td class="val amber" id="b-anomaly">0</td><td id="p-anomaly">—</td><td class="muted">worth investigating</td></tr>
+          <tr><td class="val green">strong</td><td class="val green" id="b-strong">0</td><td id="p-strong">—</td><td class="muted">candidate signal</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ALIEN REPLY -->
+  <div id="reply" class="section">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">incoming transmission — decoded</span>
+        <span class="badge b-green">received</span>
+      </div>
+      <div class="alien-msg">
+        <div style="color:var(--text2);font-size:10px;margin-bottom:6px;letter-spacing:0.06em;">RAW SIGNAL — 1420.405 MHZ</div>
+        01010111 01100101 00100000 01000001 01110010 01100101 00100000 01001000 01100101 01110010 01100101
+        <div class="decoded">→ decoded: "We Are Here"</div>
+      </div>
+
+      <div style="font-size:11px;color:var(--text2);margin-bottom:8px;letter-spacing:0.04em;">your reply</div>
+      <textarea id="replyText" placeholder="type your message to the cosmos..."></textarea>
+
+      <div class="controls">
+        <select id="encodeType">
+          <option value="binary">binary encoding</option>
+          <option value="morse">morse code</option>
+          <option value="prime">prime number sequence</option>
+          <option value="math">mathematical constants</option>
+        </select>
+        <button class="btn primary" onclick="transmitReply()">transmit reply</button>
+      </div>
+
+      <div class="tx-confirm" id="txConfirm">⟶ signal transmitted at 1420.405 mhz — awaiting response...</div>
+      <div class="encoded-output" id="encodedOut"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">transmission log</span></div>
+      <div id="txLog"><div class="empty">no transmissions yet</div></div>
+    </div>
+  </div>
+
+  <!-- MOON -->
+  <div id="moon" class="section">
+    <div class="card">
+      <div class="moon-hero">
+        <div class="moon-icon" id="moonEmoji">🌕</div>
+        <div class="moon-phase-name" id="moonPhaseName">Full Moon</div>
+        <div class="moon-illum" id="moonIllum">illumination: 100%</div>
+        <div class="phase-track" id="phaseTrack"></div>
+      </div>
+    </div>
+
+    <div class="moon-grid">
+      <div class="moon-stat"><div class="moon-stat-label">distance from earth</div><div class="moon-stat-val" id="moonDist">384,400 km</div></div>
+      <div class="moon-stat"><div class="moon-stat-label">orbital period</div><div class="moon-stat-val">27.3 days</div></div>
+      <div class="moon-stat"><div class="moon-stat-label">day surface temp</div><div class="moon-stat-val">127°C</div></div>
+      <div class="moon-stat"><div class="moon-stat-label">night surface temp</div><div class="moon-stat-val">−173°C</div></div>
+      <div class="moon-stat"><div class="moon-stat-label">diameter</div><div class="moon-stat-val">3,474 km</div></div>
+      <div class="moon-stat"><div class="moon-stat-label">gravity vs earth</div><div class="moon-stat-val">16.6%</div></div>
+      <div class="moon-stat"><div class="moon-stat-label">age</div><div class="moon-stat-val">4.5 billion yrs</div></div>
+      <div class="moon-stat"><div class="moon-stat-label">craters known</div><div class="moon-stat-val">~9,000</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">interesting moon facts</span>
+        <button class="btn sm" onclick="nextFact()">next fact →</button>
+      </div>
+      <div class="fact-counter" id="factCounter">fact 1 of 10</div>
+      <div class="fact-box" id="factBox">The Moon is slowly drifting away from Earth at about 3.8 cm per year — roughly the same rate your fingernails grow. In about 600 million years it will be too far away to cause total solar eclipses.</div>
+    </div>
+  </div>
+
+  <!-- ASTRONOMER -->
+  <div id="astronomer" class="section">
+    <div class="card">
+      <div class="astro-profile">
+        <div class="avatar">👩‍🔬</div>
+        <div>
+          <div class="astro-name">Dr. Elara Voss</div>
+          <div class="astro-bio">Chief Signal Analyst at AvA Universe. 22 years scanning the cosmos. Former SETI Institute researcher. Believes citizen science will make the first confirmed alien contact — and she wants you to be part of it.</div>
+        </div>
+      </div>
+
+      <div style="font-size:11px;color:var(--text2);margin-bottom:8px;letter-spacing:0.04em;">her reaction to your session</div>
+      <div class="reaction-box" id="reactionBox">Dr. Voss is waiting for you to start scanning. Every signal you analyze brings us closer to an answer.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">quotes from dr. voss</span>
+        <div style="display:flex;gap:6px;">
+          <button class="btn sm" onclick="prevQuote()">← prev</button>
+          <button class="btn sm" onclick="nextQuote()">next →</button>
+        </div>
+      </div>
+      <div class="quote-block">
+        <div id="quoteText">"Every anomaly we detect is a question the universe is asking us. The day we stop listening is the day we stop being curious — and that would be the real tragedy for science."</div>
+        <div class="quote-attr" id="quoteAttr">— Dr. Elara Voss, on the importance of citizen science</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">famous cosmos quotes</span>
+        <button class="btn sm" onclick="nextCosmosQuote()">next →</button>
+      </div>
+      <div class="cosmos-quote" id="cosmosQuoteText">"The cosmos is within us. We are made of star-stuff. We are a way for the universe to know itself."</div>
+      <div style="font-size:11px;color:var(--text3);" id="cosmosQuoteBy">— Carl Sagan</div>
+    </div>
+
+    <!-- AI CHAT -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">chat with dr. elara voss — ai powered</span>
+        <span class="badge b-green">live</span>
+      </div>
+
+      <div class="api-notice" id="apiNotice">
+        to enable ai chat, enter your anthropic api key below. your key stays in your browser only — never sent anywhere except directly to anthropic.
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <input type="text" id="apiKeyInput" placeholder="sk-ant-..." style="flex:1;">
+          <button class="btn primary" onclick="saveApiKey()">save key</button>
+        </div>
+      </div>
+
+      <div class="chat-wrap">
+        <div class="chat-messages" id="chatMessages">
+          <div class="chat-msg elara">
+            <div class="chat-avatar">👩‍🔬</div>
+            <div class="chat-bubble">Hello! I am Dr. Elara Voss. Ask me anything about space, SETI, alien signals, the cosmos — or just tell me what you found in your scanning session. I am always listening.</div>
+          </div>
+        </div>
+
+        <div class="typing-indicator" id="typingIndicator">
+          <div class="chat-avatar" style="width:24px;height:24px;font-size:12px;">👩‍🔬</div>
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+        </div>
+
+        <div class="chat-input-row">
+          <textarea class="chat-input" id="chatInput" placeholder="ask dr. voss anything..." rows="1" onkeydown="handleChatKey(event)"></textarea>
+          <button class="btn primary" onclick="sendChat()">send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  ava universe — open source citizen science · analyzing hydrogen line 1420.405 mhz · built with curiosity
+</footer>
+
+<script>
+// =====================
+// STATE
+// =====================
+const BARS = 44;
+let scanning = false, scanInterval = null, statsInterval = null;
+let sessionStart = null;
+let total = 0, anomalies = 0, strong = 0, normals = 0;
+let logs = [], vault = [];
+let apiKey = localStorage.getItem('ava_api_key') || '';
+let chatHistory = [];
+
+// =====================
+// INIT WAVEFORM
+// =====================
+const waveformEl = document.getElementById('waveform');
+for (let i = 0; i < BARS; i++) {
+  const b = document.createElement('div');
+  b.className = 'bar';
+  b.style.height = '6px';
+  waveformEl.appendChild(b);
+}
+const bars = waveformEl.querySelectorAll('.bar');
+
+// =====================
+// API KEY
+// =====================
+function checkApiKey() {
+  if (!apiKey) {
+    document.getElementById('apiNotice').style.display = 'block';
+  }
+}
+
+function saveApiKey() {
+  const val = document.getElementById('apiKeyInput').value.trim();
+  if (val.startsWith('sk-ant-') || val.startsWith('sk-')) {
+    apiKey = val;
+    localStorage.setItem('ava_api_key', val);
+    document.getElementById('apiNotice').style.display = 'none';
+    document.getElementById('apiKeyInput').value = '';
+  } else {
+    alert('Please enter a valid Anthropic API key (starts with sk-ant-)');
+  }
+}
+
+// =====================
+// TABS
+// =====================
+function showTab(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'astronomer') checkApiKey();
+}
+
+// =====================
+// SCANNER UTILS
+// =====================
+function rand(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+
+function animateBars(type) {
+  const c = Math.floor(BARS / 2);
+  bars.forEach((bar, i) => {
+    let h;
+    if (type === 'anomaly') {
+      h = (i >= c - 2 && i <= c + 2) ? rand(55, 85) : rand(4, 20);
+      bar.className = 'bar' + (i >= c - 2 && i <= c + 2 ? ' anomaly' : '');
+    } else if (type === 'strong') {
+      h = rand(45, 82);
+      bar.className = 'bar strong';
+    } else {
+      h = rand(4, 28);
+      bar.className = 'bar';
+    }
+    bar.style.height = h + 'px';
+  });
+}
+
+const sigMsgs = {
+  normal: ['baseline noise', 'thermal emission', 'background radiation', 'galactic drift', 'cosmic static', 'interstellar medium', 'ionospheric scatter', 'solar wind noise'],
+  anomaly: ['narrow-band spike', 'non-thermal peak', 'doppler shifted signal', 'unexplained narrowband', 'periodic pulse', 'structured interference', 'repeating modulation', 'coherent narrowband burst'],
+  strong: ['strong hydrogen emission', 'repeating waveform', 'structured periodicity', 'candidate signal detected', 'persistent narrowband', 'coherent transmission', 'high-snr narrowband', 'sustained emission peak']
+};
+
+function addLog(type) {
+  const now = new Date();
+  const time = now.toTimeString().slice(0, 5);
+  const freq = (1419.8 + Math.random() * 1.2).toFixed(3);
+  const msg = sigMsgs[type][rand(0, sigMsgs[type].length - 1)];
+  const bc = type === 'normal' ? 'b-normal' : type === 'anomaly' ? 'b-anomaly' : 'b-strong';
+
+  const item = document.createElement('div');
+  item.className = 'log-item';
+  item.innerHTML = `<span class="log-time">${time}</span><span class="log-freq">${freq} mhz</span><span class="log-msg">${msg}</span><span class="badge ${bc}">${type}</span>`;
+
+  const ll = document.getElementById('logList');
+  if (ll.querySelector('.empty')) ll.innerHTML = '';
+  ll.prepend(item);
+  logs.unshift({ time, freq, msg, type });
+  if (logs.length > 60) { logs.pop(); ll.lastChild && ll.removeChild(ll.lastChild); }
+  document.getElementById('logCount').textContent = logs.length + ' entries';
+
+  if (type !== 'normal') addToVault({ time, freq, msg, type });
+}
+
+function addToVault(entry) {
+  vault.unshift(entry);
+  const vl = document.getElementById('vaultList');
+  if (vl.querySelector('.empty')) vl.innerHTML = '';
+  const div = document.createElement('div');
+  div.className = 'vault-item';
+  const bc = entry.type === 'anomaly' ? 'b-anomaly' : 'b-strong';
+  div.innerHTML = `<span class="badge ${bc}" style="align-self:center;">${entry.type}</span><div><div class="vault-freq">${entry.freq} mhz</div><div class="vault-meta">${entry.time} — ${entry.msg}</div></div>`;
+  vl.prepend(div);
+  document.getElementById('vaultCount').textContent = vault.length + ' saved';
+}
+
+function updateStats() {
+  document.getElementById('totalAnalyzed').textContent = total;
+  document.getElementById('anomalyCount').textContent = anomalies;
+  document.getElementById('strongCount').textContent = strong;
+  document.getElementById('headerStats').textContent = total + ' signals analyzed';
+
+  const t = total || 1;
+  document.getElementById('b-normal').textContent = normals;
+  document.getElementById('b-anomaly').textContent = anomalies;
+  document.getElementById('b-strong').textContent = strong;
+  document.getElementById('p-normal').textContent = Math.round(normals / t * 100) + '%';
+  document.getElementById('p-anomaly').textContent = Math.round(anomalies / t * 100) + '%';
+  document.getElementById('p-strong').textContent = Math.round(strong / t * 100) + '%';
+
+  // update astronomer reaction
+  let msg;
+  if (total === 0) msg = 'Dr. Voss is waiting for you to start scanning. Every signal you analyze brings us closer to an answer.';
+  else if (strong >= 5) msg = `"Incredible — ${strong} strong signals already! This is one of the most promising sessions I have seen in years. Keep going."`;
+  else if (anomalies >= 10) msg = `"${anomalies} anomalies logged. Something is definitely out there. I cannot stop thinking about this session."`;
+  else if (total >= 20) msg = `"You have processed ${total} signals. Solid, careful work. The universe is vast — patience is the astronomer's greatest tool."`;
+  else msg = `"Good start. ${total} signals processed so far. Every scan matters. We are listening carefully together."`;
+  document.getElementById('reactionBox').textContent = msg;
+}
+
+function doScan() {
+  const r = Math.random();
+  const type = r < 0.64 ? 'normal' : r < 0.87 ? 'anomaly' : 'strong';
+  animateBars(type);
+  total++;
+  if (type === 'anomaly') anomalies++;
+  else if (type === 'strong') strong++;
+  else normals++;
+  addLog(type);
+  updateStats();
+}
+
+function updateTime() {
+  if (!sessionStart) return;
+  const s = Math.floor((Date.now() - sessionStart) / 1000);
+  document.getElementById('sessionTime').textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+}
+
+function toggleScan() {
+  scanning = !scanning;
+  const btn = document.getElementById('mainBtn');
+  const status = document.getElementById('scanStatus');
+  if (scanning) {
+    btn.textContent = 'stop scanning';
+    status.textContent = 'scanning...';
+    status.style.color = 'var(--green)';
+    sessionStart = sessionStart || Date.now();
+    scanInterval = setInterval(doScan, 850);
+    statsInterval = setInterval(updateTime, 1000);
+    doScan();
+  } else {
+    btn.textContent = 'start scanning';
+    status.textContent = 'idle';
+    status.style.color = 'var(--text3)';
+    clearInterval(scanInterval);
+    clearInterval(statsInterval);
+  }
+}
+
+function resetAll() {
+  if (scanning) toggleScan();
+  total = anomalies = strong = normals = 0;
+  logs = []; vault = [];
+  sessionStart = null;
+  document.getElementById('sessionTime').textContent = '0:00';
+  document.getElementById('logList').innerHTML = '<div class="empty">press start scanning to begin analysis</div>';
+  document.getElementById('logCount').textContent = '0 entries';
+  document.getElementById('vaultList').innerHTML = '<div class="empty">no signals collected yet — start scanning to gather data</div>';
+  document.getElementById('vaultCount').textContent = '0 saved';
+  bars.forEach(b => { b.className = 'bar'; b.style.height = '6px'; });
+  updateStats();
+}
+
+// =====================
+// ALIEN REPLY
+// =====================
+function toBinary(s) { return s.split('').map(c => c.charCodeAt(0).toString(2).padStart(8, '0')).join(' '); }
+function toMorse(s) {
+  const m = {a:'.-',b:'-...',c:'-.-.',d:'-..',e:'.',f:'..-.',g:'--.',h:'....',i:'..',j:'.---',k:'-.-',l:'.-..',m:'--',n:'-.',o:'---',p:'.--.',q:'--.-',r:'.-.',s:'...',t:'-',u:'..-',v:'...-',w:'.--',x:'-..-',y:'-.--',z:'--..',' ':'/'};
+  return s.toLowerCase().split('').map(c => m[c] || '?').join(' ');
+}
+function toPrime(s) {
+  const p = [2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97];
+  return s.split('').map(c => p[c.charCodeAt(0) % p.length]).join(' — ');
+}
+function toMath(s) { return s.split('').map(c => (c.charCodeAt(0) / 10).toFixed(4)).join(' | '); }
+
+function transmitReply() {
+  const text = document.getElementById('replyText').value.trim();
+  if (!text) return;
+  const type = document.getElementById('encodeType').value;
+  const encoded = type === 'binary' ? toBinary(text) : type === 'morse' ? toMorse(text) : type === 'prime' ? toPrime(text) : toMath(text);
+
+  const out = document.getElementById('encodedOut');
+  out.style.display = 'block';
+  out.textContent = encoded;
+
+  const conf = document.getElementById('txConfirm');
+  conf.style.display = 'block';
+  setTimeout(() => conf.style.display = 'none', 4000);
+
+  const now = new Date().toTimeString().slice(0, 5);
+  const log = document.getElementById('txLog');
+  if (log.querySelector('.empty')) log.innerHTML = '';
+  const d = document.createElement('div');
+  d.className = 'tx-log-item';
+  d.textContent = `${now} — "${text.slice(0, 50)}${text.length > 50 ? '...' : ''}" → ${type}`;
+  log.prepend(d);
+}
+
+// =====================
+// MOON
+// =====================
+const moonPhases = [
+  {e:'🌑',name:'New Moon',illum:'0%'},
+  {e:'🌒',name:'Waxing Crescent',illum:'25%'},
+  {e:'🌓',name:'First Quarter',illum:'50%'},
+  {e:'🌔',name:'Waxing Gibbous',illum:'75%'},
+  {e:'🌕',name:'Full Moon',illum:'100%'},
+  {e:'🌖',name:'Waning Gibbous',illum:'75%'},
+  {e:'🌗',name:'Last Quarter',illum:'50%'},
+  {e:'🌘',name:'Waning Crescent',illum:'25%'}
+];
+
+function initMoon() {
+  const known = new Date('2000-01-06');
+  const diff = Math.round((Date.now() - known) / 86400000);
+  const idx = Math.floor(Math.abs(diff % 29.5) / 29.5 * 8) % 8;
+  const phase = moonPhases[idx];
+  document.getElementById('moonEmoji').textContent = phase.e;
+  document.getElementById('moonPhaseName').textContent = phase.name;
+  document.getElementById('moonIllum').textContent = 'illumination: ' + phase.illum;
+  document.getElementById('moonDist').textContent = (384400 + Math.round(Math.random() * 20000 - 10000)).toLocaleString() + ' km';
+  const track = document.getElementById('phaseTrack');
+  moonPhases.forEach((p, i) => {
+    const pip = document.createElement('div');
+    pip.className = 'phase-pip' + (i === idx ? ' now' : '');
+    pip.textContent = p.e;
+    pip.title = p.name;
+    track.appendChild(pip);
+  });
+}
+
+const moonFactsList = [
+  "The Moon is slowly drifting away from Earth at 3.8 cm per year — the same rate your fingernails grow. In 600 million years, total solar eclipses will no longer be possible.",
+  "The Moon has moonquakes caused by Earth's gravitational pull. Some last over an hour — far longer than earthquakes.",
+  "With no atmosphere, Apollo astronauts' footprints will remain perfectly preserved for millions of years.",
+  "The same side of the Moon always faces Earth — this is called tidal locking, caused by gravitational synchronization over billions of years.",
+  "The Moon likely formed from debris after a Mars-sized object called Theia collided with the early Earth around 4.5 billion years ago.",
+  "A single day on the Moon lasts about 29.5 Earth days — the same as its full orbit around us.",
+  "The Moon's gravitational pull is the primary driver of Earth's ocean tides, which rise and fall roughly twice daily.",
+  "There is water ice confirmed on the Moon, trapped in permanently shadowed craters near the poles — a future resource for lunar missions.",
+  "The Moon is the fifth-largest natural satellite in the solar system and is unusually large relative to its host planet.",
+  "During a total solar eclipse, the Moon and Sun appear almost exactly the same size in the sky — a cosmic coincidence that won't last forever."
+];
+
+let factIdx = 0;
+function nextFact() {
+  factIdx = (factIdx + 1) % moonFactsList.length;
+  const box = document.getElementById('factBox');
+  box.style.opacity = '0';
+  setTimeout(() => {
+    box.textContent = moonFactsList[factIdx];
+    document.getElementById('factCounter').textContent = 'fact ' + (factIdx + 1) + ' of ' + moonFactsList.length;
+    box.style.opacity = '1';
+  }, 150);
+}
+
+initMoon();
+
+// =====================
+// ASTRONOMER QUOTES
+// =====================
+const vossQuotes = [
+  { text: '"Every anomaly we detect is a question the universe is asking us. The day we stop listening is the day we stop being curious — and that would be the real tragedy for science."', attr: '— Dr. Elara Voss, on the importance of citizen science' },
+  { text: '"I have been scanning the skies for 22 years. The signal I am looking for exists — I feel it the way a sailor feels land before seeing it."', attr: '— Dr. Elara Voss, interview 2019' },
+  { text: '"AvA Universe is special because the humans analyzing the data genuinely care. Machines compute. Humans wonder. That difference matters enormously."', attr: '— Dr. Elara Voss, TED talk 2022' },
+  { text: '"If we ever detect an alien signal, it will be the most important moment in human history. I want you — all of you — to be part of that discovery."', attr: '— Dr. Elara Voss, mission statement' },
+  { text: '"The Wow! Signal of 1977 lasted 72 seconds and was never heard again. It reminds me that the universe is not obliged to repeat itself for our convenience."', attr: '— Dr. Elara Voss, lecture on anomalous signals' }
+];
+
+const cosmosQuotesList = [
+  { text: '"The cosmos is within us. We are made of star-stuff. We are a way for the universe to know itself."', by: '— Carl Sagan' },
+  { text: '"Two possibilities exist: either we are alone in the universe or we are not. Both are equally terrifying."', by: '— Arthur C. Clarke' },
+  { text: '"Not only is the universe stranger than we imagine, it is stranger than we can imagine."', by: '— J.B.S. Haldane' },
+  { text: '"Somewhere, something incredible is waiting to be known."', by: '— Sharon Begley' },
+  { text: '"The universe is under no obligation to make sense to you."', by: '— Neil deGrasse Tyson' },
+  { text: '"The important thing is not to stop questioning. Curiosity has its own reason for existing."', by: '— Albert Einstein' }
+];
+
+let qIdx = 0, cqIdx = 0;
+
+function nextQuote() { qIdx = (qIdx + 1) % vossQuotes.length; updateVossQuote(); }
+function prevQuote() { qIdx = (qIdx - 1 + vossQuotes.length) % vossQuotes.length; updateVossQuote(); }
+function updateVossQuote() {
+  document.getElementById('quoteText').textContent = vossQuotes[qIdx].text;
+  document.getElementById('quoteAttr').textContent = vossQuotes[qIdx].attr;
+}
+
+function nextCosmosQuote() {
+  cqIdx = (cqIdx + 1) % cosmosQuotesList.length;
+  document.getElementById('cosmosQuoteText').textContent = cosmosQuotesList[cqIdx].text;
+  document.getElementById('cosmosQuoteBy').textContent = cosmosQuotesList[cqIdx].by;
+}
+
+// =====================
+// AI CHAT
+// =====================
+function handleChatKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+}
+
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+
+  if (!apiKey) {
+    checkApiKey();
+    document.getElementById('astronomer').querySelector('.api-notice').style.display = 'block';
+    return;
+  }
+
+  input.value = '';
+  appendChatMsg('user', text);
+  chatHistory.push({ role: 'user', content: text });
+
+  document.getElementById('typingIndicator').style.display = 'flex';
+  scrollChat();
+
+  const sessionContext = total > 0
+    ? `The user has analyzed ${total} signals in their current session: ${normals} normal, ${anomalies} anomalies, and ${strong} strong candidate signals.`
+    : 'The user has not started scanning yet.';
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: `You are Dr. Elara Voss, chief signal analyst at AvA Universe — a citizen science platform for radio signal analysis in the search for extraterrestrial intelligence. You are brilliant, passionate, warm, and slightly obsessed with the cosmos. You have 22 years of experience and previously worked at the SETI Institute. You speak with authority but make science accessible and exciting. You are genuinely excited when users find anomalies or strong signals. Answer questions about space, SETI, alien signals, radio astronomy, the Moon, the cosmos, and anything related to the mission. Keep responses concise and engaging — 2 to 4 sentences typically. ${sessionContext}`,
+        messages: chatHistory
+      })
+    });
+
+    const data = await res.json();
+    document.getElementById('typingIndicator').style.display = 'none';
+
+    if (data.content && data.content[0]) {
+      const reply = data.content[0].text;
+      chatHistory.push({ role: 'assistant', content: reply });
+      appendChatMsg('elara', reply);
+    } else {
+      appendChatMsg('elara', 'My connection to the signal array timed out. Try again in a moment.');
+    }
+  } catch (err) {
+    document.getElementById('typingIndicator').style.display = 'none';
+    appendChatMsg('elara', 'Signal interference detected. Check your API key in the settings above, then try again.');
+  }
+}
+
+function appendChatMsg(role, text) {
+  const msgs = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg ' + (role === 'user' ? 'user' : 'elara');
+  div.innerHTML = `<div class="chat-avatar">${role === 'user' ? '👤' : '👩‍🔬'}</div><div class="chat-bubble">${text}</div>`;
+  msgs.appendChild(div);
+  scrollChat();
+}
+
+function scrollChat() {
+  const msgs = document.getElementById('chatMessages');
+  msgs.scrollTop = msgs.scrollHeight;
+}
+</script>
+</body>
+</html>
